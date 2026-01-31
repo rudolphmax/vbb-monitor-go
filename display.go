@@ -47,12 +47,31 @@ func Line(theme *material.Theme, gtx layout.Context, textContent string, departu
         return layout.Dimensions{Size: image.Pt(gtx.Constraints.Max.X, size)}
      	}),
       layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+        if (departure.RtTime != nil) {
+          var title material.LabelStyle
+          title = material.Body1(theme, "*")
+
+          title.TextSize = unit.Sp(13)
+          title.Color = color.NRGBA{0xFF, 0xFF, 0xFF, 0xFF}
+          title.Alignment = text.Middle
+          title.Layout(gtx)
+        }
+
+        return layout.Dimensions{Size: image.Pt(20, 10)}
+     	}),
+      layout.Rigid(func(gtx layout.Context) layout.Dimensions {
         var title material.LabelStyle
 
         if (int(departure.dTime.Minutes()) <= 0) {
           title = material.Body1(theme, "now")
+
         } else if (int(departure.dTime.Minutes()) >= 10) {
-          title = material.Body1(theme, departure.Time)
+          if (departure.RtTime != nil) {
+            title = material.Body1(theme, departure.RtTimeString)
+          } else {
+            title = material.Body1(theme, departure.TimeString)
+          }
+
         } else {
           title = material.Body1(theme, strconv.Itoa(int(departure.dTime.Minutes())))
         }

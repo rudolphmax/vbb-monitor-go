@@ -6,8 +6,15 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"slices"
 	"time"
 )
+
+type ApiParams struct {
+  Base string;
+  AccessId string;
+  StopID string;
+}
 
 type ApiColor struct {
   R uint8;
@@ -39,10 +46,10 @@ type Departure struct {
   Name string;
   Direction string;
   Cancelled bool;
-  Date string;
-  Time string;
-  RtTime string;
-  RtDate string;
+  TimeString string;
+  Time *time.Time;
+  RtTimeString string;
+  RtTime *time.Time;
   dTime time.Duration;
   ForegroundColor ApiColor;
   BackgroundColor ApiColor;
@@ -55,41 +62,58 @@ func preprocess(data ApiResponse) []Departure {
     dep := data.Departure[i]
 
     var dtime time.Duration = 0
-    var parsedTime time.Time
-    var parsedRtTime time.Time
+    var parsedTime *time.Time = nil
+    var parsedTimeString string = ""
+    var parsedRtTime *time.Time = nil
+    var parsedRtTimeString string = ""
 
-    parsedTime, error := time.ParseInLocation(time.DateTime, dep.Date + " " + dep.Time, time.Local)
+    var error error
+
+    pt, error := time.ParseInLocation(time.DateTime, dep.Date + " " + dep.Time, time.Local)
+
+    if (error == nil) {
+      parsedTime = &pt
+      parsedTimeString = (*parsedTime).Format("15:04")
+    }
 
     if (dep.RtTime != "") {
-      parsedRtTime, error := time.ParseInLocation(time.DateTime, dep.RtDate + " " + dep.RtTime, time.Local)
+      prt, error := time.ParseInLocation(time.DateTime, dep.RtDate + " " + dep.RtTime, time.Local)
 
       if (error == nil) {
-        dtime = parsedRtTime.Sub(time.Now().Local())
+        parsedRtTime = &prt
+        parsedRtTimeString = (*parsedRtTime).Format("15:04")
+        dtime = (*parsedRtTime).Sub(time.Now().Local())
       }
 
     } else if (error == nil) {
-      dtime = parsedTime.Sub(time.Now().Local())
+      dtime = (*parsedTime).Sub(time.Now().Local())
     }
 
     departures = append(departures, Departure{
       Name: dep.Name,
       Direction: dep.Direction,
       Cancelled: dep.Cancelled,
-      Time: parsedTime.Format("15:04"),
-      RtTime: parsedRtTime.Format("15:04"),
+      TimeString: parsedTimeString,
+      Time: parsedTime,
+      RtTimeString: parsedRtTimeString,
+      RtTime: parsedRtTime,
       dTime: dtime,
       ForegroundColor: dep.ProductAtStop.Icon.ForegroundColor,
       BackgroundColor: dep.ProductAtStop.Icon.BackgroundColor,
     })
   }
 
+  slices.SortStableFunc(departures, func(a, b Departure) int {
+		return (*a.Time).Compare(*b.Time)
+	})
+
   return departures
 }
 
-func fetchData(data chan []Departure) {
-  escapedStopId := url.PathEscape("")
+func fetchData(params ApiParams, data chan []Departure) {
+  escapedStopId := url.PathEscape(params.StopID)
 
-  resp, err := http.Get("" + escapedStopId + "")
+  resp, err := http.Get(params.Base + "?accessId=" + params.AccessId + "&id=" + escapedStopId + "&format=json")
 
   if err != nil {
     panic(err)
