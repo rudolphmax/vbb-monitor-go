@@ -7,13 +7,22 @@ import (
 	"net/http"
 	"net/url"
 	"slices"
+	"strconv"
 	"time"
 )
+
+type Stop struct {
+  ID string;
+  Lines string;
+  MaxDepartures int;
+  TimeOffset int;
+  Direction string;
+}
 
 type ApiParams struct {
   Base string;
   AccessId string;
-  StopID string;
+  Stops []Stop;
 }
 
 type ApiColor struct {
@@ -25,6 +34,7 @@ type ApiColor struct {
 type ApiDeparture struct {
   Name string;
   Direction string;
+  DirectionFlag string;
   Cancelled bool;
   Date string;
   Time string;
@@ -55,11 +65,11 @@ type Departure struct {
   BackgroundColor ApiColor;
 };
 
-func preprocess(data ApiResponse) []Departure {
+func preprocess(data []ApiDeparture) []Departure {
   var departures []Departure
 
-  for i := range data.Departure {
-    dep := data.Departure[i]
+  for i := range data {
+    dep := data[i]
 
     var dtime time.Duration = 0
     var parsedTime *time.Time = nil
@@ -111,24 +121,39 @@ func preprocess(data ApiResponse) []Departure {
 }
 
 func fetchData(params ApiParams, data chan []Departure) {
-  escapedStopId := url.PathEscape(params.StopID)
+  var departures []ApiDeparture
+  for i := range params.Stops {
+    stop := params.Stops[i]
 
-  resp, err := http.Get(params.Base + "?accessId=" + params.AccessId + "&id=" + escapedStopId + "&format=json")
+    offsetTimestamp := time.Now().Local().Add(time.Minute * time.Duration(stop.TimeOffset)).Format("15:04")
 
-  if err != nil {
-    panic(err)
+    escapedStopId := url.PathEscape(stop.ID)
+    resp, err := http.Get(params.Base + "?accessId=" + params.AccessId + "&id=" + escapedStopId + "&time=" + offsetTimestamp + "&lines=" + stop.Lines + "&maxJourneys=" + strconv.Itoa(stop.MaxDepartures) + "&format=json")
+
+    if err != nil {
+      panic(err)
+    }
+
+    body, err := io.ReadAll(resp.Body)
+
+    var res ApiResponse
+
+    err = json.Unmarshal([]byte(body), &res);
+   	if err != nil {
+  		fmt.Println("error:", err)
+   	}
+
+    // Filtering directions
+    res.Departure = slices.DeleteFunc(
+      res.Departure,
+      func(d ApiDeparture) bool {
+        return stop.Direction != "" && d.Direction != stop.Direction && d.DirectionFlag != stop.Direction
+      },
+    )
+
+    departures = append(departures, (res.Departure)...)
+    resp.Body.Close()
   }
 
-  body, err := io.ReadAll(resp.Body)
-
-  var res ApiResponse
-
-  err = json.Unmarshal([]byte(body), &res);
- 	if err != nil {
-		fmt.Println("error:", err)
- 	}
-
-  data <- preprocess(res)
-
-  resp.Body.Close()
+  data <- preprocess(departures)
 }
