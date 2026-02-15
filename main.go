@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"flag"
 	"log"
 	"os"
@@ -22,14 +21,12 @@ func main() {
 
   go func() {
     for {
-      fmt.Println("Fetching data...")
-
       fetchData(
         config.Api,
         data,
       )
 
-      time.Sleep(10 * time.Second)
+      time.Sleep(time.Duration(config.FetchInterval) * time.Second)
     }
   }()
 

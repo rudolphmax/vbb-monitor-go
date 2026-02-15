@@ -7,6 +7,7 @@ import (
 
 type Config struct {
   Api ApiParams;
+  FetchInterval int;
 }
 
 func readConfig(path string) (Config, error) {

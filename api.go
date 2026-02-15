@@ -33,6 +33,7 @@ type ApiColor struct {
 
 type ApiDeparture struct {
   Name string;
+  Stop string;
   Direction string;
   DirectionFlag string;
   Cancelled bool;
@@ -54,6 +55,7 @@ type ApiResponse struct {
 
 type Departure struct {
   Name string;
+  Stop string;
   Direction string;
   Cancelled bool;
   TimeString string;
@@ -61,15 +63,17 @@ type Departure struct {
   RtTimeString string;
   RtTime *time.Time;
   dTime time.Duration;
+  TimeOffset int;
   ForegroundColor ApiColor;
   BackgroundColor ApiColor;
 };
 
-func preprocess(data []ApiDeparture) []Departure {
+func preprocess(data []ApiDeparture, timeOffsets []time.Duration) []Departure {
   var departures []Departure
 
   for i := range data {
     dep := data[i]
+    timeOffset := timeOffsets[i]
 
     var dtime time.Duration = 0
     var parsedTime *time.Time = nil
@@ -101,6 +105,7 @@ func preprocess(data []ApiDeparture) []Departure {
 
     departures = append(departures, Departure{
       Name: dep.Name,
+      Stop: dep.Stop,
       Direction: dep.Direction,
       Cancelled: dep.Cancelled,
       TimeString: parsedTimeString,
@@ -108,6 +113,7 @@ func preprocess(data []ApiDeparture) []Departure {
       RtTimeString: parsedRtTimeString,
       RtTime: parsedRtTime,
       dTime: dtime,
+      TimeOffset: int(timeOffset.Minutes()),
       ForegroundColor: dep.ProductAtStop.Icon.ForegroundColor,
       BackgroundColor: dep.ProductAtStop.Icon.BackgroundColor,
     })
@@ -122,10 +128,13 @@ func preprocess(data []ApiDeparture) []Departure {
 
 func fetchData(params ApiParams, data chan []Departure) {
   var departures []ApiDeparture
+  var timeOffsets []time.Duration
+
   for i := range params.Stops {
     stop := params.Stops[i]
 
-    offsetTimestamp := time.Now().Local().Add(time.Minute * time.Duration(stop.TimeOffset)).Format("15:04")
+    timeOffset := time.Minute * time.Duration(stop.TimeOffset)
+    offsetTimestamp := time.Now().Local().Add(timeOffset).Format("15:04")
 
     escapedStopId := url.PathEscape(stop.ID)
     resp, err := http.Get(params.Base + "?accessId=" + params.AccessId + "&id=" + escapedStopId + "&time=" + offsetTimestamp + "&lines=" + stop.Lines + "&maxJourneys=" + strconv.Itoa(stop.MaxDepartures) + "&format=json")
@@ -151,9 +160,14 @@ func fetchData(params ApiParams, data chan []Departure) {
       },
     )
 
+    for _ = range res.Departure {
+      timeOffsets = append(timeOffsets, timeOffset)
+    }
+
     departures = append(departures, (res.Departure)...)
+
     resp.Body.Close()
   }
 
-  data <- preprocess(departures)
+  data <- preprocess(departures, timeOffsets)
 }
