@@ -26,92 +26,108 @@ func Line(theme *material.Theme, gtx layout.Context, textContent string, departu
   var bgCol = departure.BackgroundColor
 
   return layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-    layout.Flex{Alignment: layout.Middle, Axis: layout.Horizontal}.Layout(gtx,
-      layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+    layout.Stack{}.Layout(gtx,
+      layout.Stacked(func(gtx layout.Context) layout.Dimensions {
+  			return layout.Flex{Alignment: layout.Middle, Axis: layout.Horizontal}.Layout(gtx,
+          layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+            layout.Background{}.Layout(gtx,
+              func(gtx layout.Context) layout.Dimensions {
+                defer clip.Rect{Max: image.Pt(size, size)}.Push(gtx.Ops).Pop()
+                paint.Fill(gtx.Ops, color.NRGBA{R: bgCol.R, G: bgCol.G, B: bgCol.B, A: 0xFF})
 
-        layout.Background{}.Layout(gtx,
-          func(gtx layout.Context) layout.Dimensions {
-            defer clip.Rect{Max: image.Pt(size, size)}.Push(gtx.Ops).Pop()
-            paint.Fill(gtx.Ops, color.NRGBA{R: bgCol.R, G: bgCol.G, B: bgCol.B, A: 0xFF})
+           			return layout.Dimensions{Size: image.Pt(size, size)}
+              },
+              func(gtx layout.Context) layout.Dimensions {
+                return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+                  layout.Flexed(1, func (gtx layout.Context) layout.Dimensions {
+                    title := material.Body1(theme, departure.Name)
+                    title.Color = color.NRGBA{R: fgCol.R, G: fgCol.G, B: fgCol.B, A: 0xFF}
+                    title.Font.Weight = font.Bold
+                    title.Alignment = text.Middle
+                    title.Layout(gtx)
 
-       			return layout.Dimensions{Size: image.Pt(size, size)}
-          },
-          func(gtx layout.Context) layout.Dimensions {
-            return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-              layout.Flexed(1, func (gtx layout.Context) layout.Dimensions {
-                title := material.Body1(theme, departure.Name)
-                title.Color = color.NRGBA{R: fgCol.R, G: fgCol.G, B: fgCol.B, A: 0xFF}
-                title.Font.Weight = font.Bold
-                title.Alignment = text.Middle
-                title.Layout(gtx)
-
-                return layout.Dimensions{Size: image.Pt(gtx.Constraints.Min.X, gtx.Sp(20))}
-              }),
+                    return layout.Dimensions{Size: image.Pt(gtx.Constraints.Min.X, gtx.Sp(20))}
+                  }),
+                )
+              },
             )
-          },
+
+            return layout.Dimensions{Size: image.Pt(size, size)}
+         	}),
+      		layout.Rigid(layout.Spacer{Width: 15}.Layout),
+          layout.Flexed(0.35, func(gtx layout.Context) layout.Dimensions {
+            title := material.Body1(theme, departure.Stop)
+            title.Color = color.NRGBA{0xFF, 0xFF, 0xFF, 0xFF}
+            title.TextSize = unit.Sp(12)
+            title.Alignment = text.Start
+            title.Layout(gtx)
+
+            return layout.Dimensions{Size: image.Pt(gtx.Constraints.Max.X, gtx.Sp(12))}
+         	}),
+          layout.Rigid(layout.Spacer{Width: 15}.Layout),
+          layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
+            title := material.Body1(theme, departure.Direction)
+            title.Color = color.NRGBA{0xFF, 0xFF, 0xFF, 0xFF}
+            title.Alignment = text.Start
+            title.Layout(gtx)
+
+            return layout.Dimensions{Size: image.Pt(gtx.Constraints.Max.X, gtx.Sp(20))}
+         	}),
+          layout.Rigid(layout.Spacer{Width: 15}.Layout),
+          layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+            if (departure.RtTime != nil) {
+              var title material.LabelStyle
+              title = material.Body1(theme, "*")
+
+              title.TextSize = unit.Sp(13)
+              title.Color = color.NRGBA{0xFF, 0xFF, 0xFF, 0xFF}
+              title.Alignment = text.Middle
+              title.Layout(gtx)
+            }
+
+            return layout.Dimensions{Size: image.Pt(20, gtx.Sp(13))}
+         	}),
+          layout.Rigid(layout.Spacer{Width: 5}.Layout),
+          layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+            var title material.LabelStyle
+
+            if (int(departure.dTime.Minutes()) <= 0) {
+              title = material.Body1(theme, "now")
+
+            } else if (int(departure.dTime.Minutes()) >= 10 + departure.TimeOffset) {
+              if (departure.RtTime != nil) {
+                title = material.Body1(theme, departure.RtTimeString)
+              } else {
+                title = material.Body1(theme, departure.TimeString)
+              }
+
+            } else {
+              title = material.Body1(theme, strconv.Itoa(int(departure.dTime.Minutes())))
+            }
+
+            title.Color = color.NRGBA{0xFF, 0xFF, 0xFF, 0xFF}
+            title.Alignment = text.Middle
+            title.Layout(gtx)
+
+            return layout.Dimensions{Size: image.Pt(size, gtx.Sp(20))}
+         	}),
+          layout.Rigid(layout.Spacer{Width: 15}.Layout),
         )
+  		}),
+      layout.Expanded(func(gtx layout.Context) layout.Dimensions {
+  			if (departure.Cancelled) {
+          return layout.Inset{ Left: 10, Right: 10 }.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+           	defer op.Offset(image.Pt(0, size / 2)).Push(gtx.Ops).Pop()
+            defer clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, 4)}.Push(gtx.Ops).Pop()
+            paint.ColorOp{Color: color.NRGBA{R: 0x94, G: 0x11, B: 0x00, A: 0xA5}}.Add(gtx.Ops)
+            paint.PaintOp{}.Add(gtx.Ops)
 
-        return layout.Dimensions{Size: image.Pt(size, size)}
-
-     	}),
-  		layout.Rigid(layout.Spacer{Width: 15}.Layout),
-      layout.Flexed(0.35, func(gtx layout.Context) layout.Dimensions {
-        title := material.Body1(theme, departure.Stop)
-        title.Color = color.NRGBA{0xFF, 0xFF, 0xFF, 0xFF}
-        title.TextSize = unit.Sp(12)
-        title.Alignment = text.Start
-        title.Layout(gtx)
-
-        return layout.Dimensions{Size: image.Pt(gtx.Constraints.Max.X, gtx.Sp(12))}
-     	}),
-      layout.Rigid(layout.Spacer{Width: 15}.Layout),
-      layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
-        title := material.Body1(theme, departure.Direction)
-        title.Color = color.NRGBA{0xFF, 0xFF, 0xFF, 0xFF}
-        title.Alignment = text.Start
-        title.Layout(gtx)
-
-        return layout.Dimensions{Size: image.Pt(gtx.Constraints.Max.X, gtx.Sp(20))}
-     	}),
-      layout.Rigid(layout.Spacer{Width: 15}.Layout),
-      layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-        if (departure.RtTime != nil) {
-          var title material.LabelStyle
-          title = material.Body1(theme, "*")
-
-          title.TextSize = unit.Sp(13)
-          title.Color = color.NRGBA{0xFF, 0xFF, 0xFF, 0xFF}
-          title.Alignment = text.Middle
-          title.Layout(gtx)
+            return layout.Dimensions{Size: image.Pt(gtx.Constraints.Min.X, size / 2)}
+         	})
         }
 
-        return layout.Dimensions{Size: image.Pt(20, gtx.Sp(13))}
-     	}),
-      layout.Rigid(layout.Spacer{Width: 5}.Layout),
-      layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-        var title material.LabelStyle
-
-        if (int(departure.dTime.Minutes()) <= 0) {
-          title = material.Body1(theme, "now")
-
-        } else if (int(departure.dTime.Minutes()) >= 10 + departure.TimeOffset) {
-          if (departure.RtTime != nil) {
-            title = material.Body1(theme, departure.RtTimeString)
-          } else {
-            title = material.Body1(theme, departure.TimeString)
-          }
-
-        } else {
-          title = material.Body1(theme, strconv.Itoa(int(departure.dTime.Minutes())))
-        }
-
-        title.Color = color.NRGBA{0xFF, 0xFF, 0xFF, 0xFF}
-        title.Alignment = text.Middle
-        title.Layout(gtx)
-
-        return layout.Dimensions{Size: image.Pt(size, gtx.Sp(20))}
-     	}),
-      layout.Rigid(layout.Spacer{Width: 15}.Layout),
+        return layout.Dimensions{Size: image.Pt(0, 0)}
+      }),
     )
 
     return layout.Dimensions{Size: image.Pt(gtx.Constraints.Min.X, size)}
@@ -208,7 +224,6 @@ func Display(window *app.Window, data chan []Departure) error {
                     )
                   },
                 )
-
              	}),
               layout.Flexed(1, func (gtx layout.Context) layout.Dimensions {
                 return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
