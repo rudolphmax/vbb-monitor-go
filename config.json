@@ -1,0 +1,23 @@
+{
+  "departureFetchInterval": 20,
+  "messageFetchInterval": 120,
+  "api": {
+    "base": "",
+    "accessId": "",
+    "stops": [
+      {
+        "ID": "",
+        "lines": "u9",
+        "maxDepartures": 5,
+        "timeOffset": 12,
+        "direction": "1"
+      },
+      {
+        "ID": "",
+        "lines": "245,101,106,M10,!u9",
+        "maxDepartures": 5,
+        "timeOffset": 12
+      }
+    ]
+  }
+}
