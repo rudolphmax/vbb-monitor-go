@@ -7,7 +7,8 @@ import (
 
 type Config struct {
   Api ApiParams;
-  FetchInterval int;
+  DepartureFetchInterval int;
+  MessageFetchInterval int;
 }
 
 func readConfig(path string) (Config, error) {

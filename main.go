@@ -17,22 +17,34 @@ func main() {
     log.Fatal("Error reading config", error)
   }
 
-  data := make(chan []Departure)
+  departureData := make(chan []Departure)
+  messageData := make(chan Messages)
 
   go func() {
     for {
-      fetchData(
+      fetchDepartures(
         config.Api,
-        data,
+        departureData,
       )
 
-      time.Sleep(time.Duration(config.FetchInterval) * time.Second)
+      time.Sleep(time.Duration(config.DepartureFetchInterval) * time.Second)
+    }
+  }()
+
+  go func() {
+    for {
+      fetchMessages(
+        config.Api,
+        messageData,
+      )
+
+      time.Sleep(time.Duration(config.MessageFetchInterval) * time.Second)
     }
   }()
 
   go func() {
 		window := initDisplay()
-		err := Display(window, data)
+		err := Display(window, departureData, messageData)
 
 		if err != nil {
 			log.Fatal(err)
@@ -42,5 +54,6 @@ func main() {
 	}()
 
 	destroyDisplay()
-	close(data)
+	close(messageData)
+	close(departureData)
 }

@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -29,6 +30,19 @@ type ApiColor struct {
   R uint8;
   G uint8;
   B uint8;
+}
+
+type ApiMessage struct {
+  AffectedProduct []struct{
+    Name string;
+  };
+  Act bool;
+  Head string;
+  Text string;
+}
+
+type ApiMessages struct {
+  Message []ApiMessage;
 }
 
 type ApiDeparture struct {
@@ -53,6 +67,9 @@ type ApiResponse struct {
   Departure []ApiDeparture;
 }
 
+type Messages []Message;
+type Message string;
+
 type Departure struct {
   Name string;
   Stop string;
@@ -68,7 +85,7 @@ type Departure struct {
   BackgroundColor ApiColor;
 };
 
-func preprocess(data []ApiDeparture, timeOffsets []time.Duration) []Departure {
+func preprocessDepartures(data []ApiDeparture, timeOffsets []time.Duration) []Departure {
   var departures []Departure
 
   for i := range data {
@@ -126,7 +143,7 @@ func preprocess(data []ApiDeparture, timeOffsets []time.Duration) []Departure {
   return departures
 }
 
-func fetchData(params ApiParams, data chan []Departure) {
+func fetchDepartures(params ApiParams, departureData chan []Departure) {
   var departures []ApiDeparture
   var timeOffsets []time.Duration
 
@@ -137,7 +154,7 @@ func fetchData(params ApiParams, data chan []Departure) {
     offsetTimestamp := time.Now().Local().Add(timeOffset).Format("15:04")
 
     escapedStopId := url.PathEscape(stop.ID)
-    resp, err := http.Get(params.Base + "?accessId=" + params.AccessId + "&id=" + escapedStopId + "&time=" + offsetTimestamp + "&lines=" + stop.Lines + "&maxJourneys=" + strconv.Itoa(stop.MaxDepartures) + "&format=json")
+    resp, err := http.Get(params.Base + "/departureBoard/?accessId=" + params.AccessId + "&id=" + escapedStopId + "&time=" + offsetTimestamp + "&lines=" + stop.Lines + "&maxJourneys=" + strconv.Itoa(stop.MaxDepartures) + "&format=json")
 
     if err != nil {
       panic(err)
@@ -169,5 +186,47 @@ func fetchData(params ApiParams, data chan []Departure) {
     resp.Body.Close()
   }
 
-  data <- preprocess(departures, timeOffsets)
+  departureData <- preprocessDepartures(departures, timeOffsets)
+}
+
+func fetchMessages(params ApiParams, messageData chan Messages) {
+  var himSearchLines string
+  for i, e := range params.Stops {
+    if (i == 0) {
+      himSearchLines = strings.ToUpper(e.Lines)
+      continue
+    }
+
+    himSearchLines = himSearchLines + "," + strings.ToUpper(e.Lines)
+  }
+
+  resp, err := http.Get(params.Base + "/himsearch/?accessId=" + params.AccessId + "&lines=" + himSearchLines + "&himcategory=1&format=json")
+
+  if err != nil {
+    panic(err)
+  }
+
+  body, err := io.ReadAll(resp.Body)
+
+  var res ApiMessages
+
+  err = json.Unmarshal([]byte(body), &res);
+  if err != nil {
+		fmt.Println("error:", err)
+  }
+
+  // Filtering non-active messages
+  res.Message = slices.DeleteFunc(
+    res.Message,
+    func(d ApiMessage) bool {
+      return d.Act == false
+    },
+  )
+
+  var messages Messages
+  for _, msg := range res.Message {
+    messages = append(messages, Message(msg.Text))
+  }
+
+  messageData <- messages
 }

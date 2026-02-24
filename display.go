@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"image"
 	"image/color"
 	"strconv"
@@ -19,7 +18,69 @@ import (
 	"gioui.org/widget/material"
 )
 
-func Line(theme *material.Theme, gtx layout.Context, textContent string, departure Departure) layout.FlexChild {
+func MessageBar(theme *material.Theme, gtx layout.Context, messages Messages, pos int, resetPos func ()) layout.Dimensions {
+  return layout.Background{}.Layout(gtx,
+    func(gtx layout.Context) layout.Dimensions {
+      defer clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}.Push(gtx.Ops).Pop()
+     	paint.Fill(gtx.Ops, color.NRGBA{R: 0xFF, G: 0xFF, B: 0xFF, A: 0xFF})
+
+ 			return layout.Dimensions{Size: image.Pt(gtx.Constraints.Max.X, gtx.Sp(20))}
+    },
+    func(gtx layout.Context) layout.Dimensions {
+      if (len(messages) > 0) {
+        var visList = layout.List{
+          Axis: layout.Horizontal,
+          ScrollToEnd: true,
+          Position: layout.Position{
+            BeforeEnd: true,
+            Offset: 5 * pos,
+          },
+        }
+
+        inv := op.InvalidateCmd{At: gtx.Now.Add(time.Second / 25)}
+  			gtx.Execute(inv)
+
+        var listLength = 2 * len(messages) + 1
+
+        var lastElementsWidth int = 0
+        var listWidth int = 0
+
+  			visList.Layout(
+     			gtx,
+     			listLength,
+  		    func(gtx layout.Context, index int) layout.Dimensions {
+  					var paragraph material.LabelStyle
+
+  					if (index % 2 != 0) {
+              paragraph = material.Label(theme, unit.Sp(14), string(messages[index/2]))
+  					} else {
+              paragraph = material.Label(theme, unit.Sp(14), string("  +++  "))
+  					}
+
+            paragraph.Alignment = text.Start
+            parDimensions := paragraph.Layout(gtx)
+
+            listWidth += parDimensions.Size.X
+
+            if (index >= listLength - 5) {
+              lastElementsWidth += parDimensions.Size.X
+            }
+
+            return parDimensions
+          },
+  			)
+
+        if (5 * pos >= listWidth - lastElementsWidth) {
+          resetPos()
+        }
+      }
+
+      return layout.Dimensions{Size: image.Pt(gtx.Constraints.Max.X, gtx.Sp(20))}
+    },
+  )
+}
+
+func Line(theme *material.Theme, gtx layout.Context, departure Departure) layout.FlexChild {
   var size = 100
 
   var fgCol = departure.ForegroundColor
@@ -135,7 +196,7 @@ func Line(theme *material.Theme, gtx layout.Context, textContent string, departu
 }
 
 
-func Display(window *app.Window, data chan []Departure) error {
+func Display(window *app.Window, departureData chan []Departure, messageData chan Messages) error {
  	events := make(chan event.Event)
  	acks := make(chan struct{})
   timeChan := make(chan string)
@@ -153,8 +214,8 @@ func Display(window *app.Window, data chan []Departure) error {
 
   go func() {
 		for {
-		  timeChan <- time.Now().Local().Format("15:04")
-			time.Sleep(10 * time.Second)
+		  timeChan <- time.Now().Local().Format("15:04:05")
+			time.Sleep(500 * time.Millisecond)
 		}
 	}()
 
@@ -162,12 +223,24 @@ func Display(window *app.Window, data chan []Departure) error {
 
 	var ops op.Ops
 
-	var departures []Departure
+	var departures []Departure;
+	var messages Messages;
 	var timeString string
+
+	messagesOffset := 0
 
 	for {
   	select {
-   	case departures = <- data:
+   	case departures = <- departureData:
+      window.Invalidate()
+
+   	case messages = <- messageData:
+      // Appending first and second element to end of list for "continous scrolling"
+      if (len(messages) > 0) {
+        messages = append(messages, messages[0])
+        messages = append(messages, messages[min(1, len(messages))])
+      }
+
       window.Invalidate()
 
     case timeString = <- timeChan:
@@ -180,7 +253,6 @@ func Display(window *app.Window, data chan []Departure) error {
    			return e.Err
 
   		case app.FrameEvent:
-        fmt.Println("Frame event")
    			gtx := app.NewContext(&ops, e)
 
         var departureLines []layout.FlexChild
@@ -188,7 +260,7 @@ func Display(window *app.Window, data chan []Departure) error {
         for i := range departures {
           departureLines = append(
             departureLines,
-            Line(theme, gtx, "Oben", departures[i]),
+            Line(theme, gtx, departures[i]),
           )
         }
 
@@ -201,7 +273,7 @@ func Display(window *app.Window, data chan []Departure) error {
             return layout.Dimensions{Size: gtx.Constraints.Max}
           }),
           layout.Stacked(func (gtx layout.Context) layout.Dimensions {
-            return layout.Flex{Axis: layout.Vertical }.Layout(gtx,
+            return layout.Flex{ Axis: layout.Vertical }.Layout(gtx,
               layout.Rigid(func(gtx layout.Context) layout.Dimensions {
                 return layout.Background{}.Layout(gtx,
                   func(gtx layout.Context) layout.Dimensions {
@@ -213,6 +285,8 @@ func Display(window *app.Window, data chan []Departure) error {
                   func(gtx layout.Context) layout.Dimensions {
                     return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
                       layout.Flexed(1, func (gtx layout.Context) layout.Dimensions {
+
+
                         var title material.LabelStyle
                         title = material.Body1(theme, timeString)
                         title.Color = color.NRGBA{0, 0, 0, 0xFF}
@@ -230,12 +304,16 @@ func Display(window *app.Window, data chan []Departure) error {
                   departureLines...,
                 )
               }),
+              layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+                return MessageBar(theme, gtx, messages, messagesOffset, func () { messagesOffset = 0 })
+             	}),
             )
           }),
         )
 
-   			// Pass the drawing operations to the GPU.
+        // Pass the drawing operations to the GPU.
    			e.Frame(gtx.Ops)
+        messagesOffset++
   		}
 
       acks <- struct{}{}
