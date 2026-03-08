@@ -137,7 +137,22 @@ func preprocessDepartures(data []ApiDeparture, timeOffsets []time.Duration) []De
   }
 
   slices.SortStableFunc(departures, func(a, b Departure) int {
-		return (*a.Time).Compare(*b.Time)
+    var aCmpTime *time.Time
+    var bCmpTime *time.Time
+
+    if (a.RtTime != nil) {
+      aCmpTime = a.RtTime
+    } else {
+      aCmpTime = a.Time
+    }
+
+    if (b.RtTime != nil) {
+      bCmpTime = b.RtTime
+    } else {
+      bCmpTime = b.Time
+    }
+
+		return (*aCmpTime).Compare(*bCmpTime)
 	})
 
   return departures
