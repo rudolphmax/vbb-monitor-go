@@ -21,6 +21,7 @@ import (
 type DisplayConfig struct {
   Theme t.ThemeConfig;
   NumLines int;
+  ScrollSpeed float32;
 }
 
 var displayConfig DisplayConfig
@@ -131,6 +132,7 @@ func Run(window *app.Window, departureData chan []api.Departure, messageData cha
                   Messages: messages,
                   Pos: messagesOffset,
                   ResetPos: func () { messagesOffset = 0 },
+                  Speed: displayConfig.ScrollSpeed,
                 }.Layout(theme, gtx)
 
                 MessageBarHeight = dimensions.Size.Y
@@ -140,6 +142,9 @@ func Run(window *app.Window, departureData chan []api.Departure, messageData cha
             )
           }),
         )
+
+        inv := op.InvalidateCmd{At: gtx.Now.Add(time.Second / 25)}
+  			gtx.Execute(inv)
 
         // Pass the drawing operations to the GPU.
    			e.Frame(gtx.Ops)

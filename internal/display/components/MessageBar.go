@@ -2,10 +2,8 @@ package components
 
 import (
 	"image"
-	"time"
 
 	"gioui.org/layout"
-	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/text"
@@ -19,6 +17,7 @@ type MessageBar struct {
   Messages api.Messages;
   Pos int;
   ResetPos func ()
+  Speed float32;
 }
 
 func (mb MessageBar) Layout(theme *material.Theme, gtx layout.Context) layout.Dimensions {
@@ -38,12 +37,9 @@ func (mb MessageBar) Layout(theme *material.Theme, gtx layout.Context) layout.Di
           ScrollToEnd: true,
           Position: layout.Position{
             BeforeEnd: true,
-            Offset: 5 * mb.Pos,
+            Offset: int(mb.Speed * float32(mb.Pos)),
           },
         }
-
-        inv := op.InvalidateCmd{At: gtx.Now.Add(time.Second / 25)}
-  			gtx.Execute(inv)
 
         var listLength = 2 * len(mb.Messages) + 1
 

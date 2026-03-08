@@ -22,6 +22,7 @@
   },
   "display": {
     "numLines": 8,
+    "scrollSpeed": 3.5,
     "theme": {
       "font": {
         "sizeBase": 17,

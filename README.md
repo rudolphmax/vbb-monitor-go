@@ -65,6 +65,7 @@ Command-line options can be viewed with `-help`.
 | `api.stops[i].timeOffset`             | Offset for the arrival of the departures at this stop in minutes from "now".   | `10` -> no arrivals fetched that arrive in < 10 minutes |
 | `api.stops[i].direction`              | The ID of this stop.                                                           | Refer to HAFAS documentation                            |
 | `display.numLines`                    | The number of lines displayed. Has no effect on fetching (see `maxDepartures`) | 9                                                       |
+| `display.scrollSpeed`                 | The number of pixels to scroll the message bar by each frame                   | 5                                                       |
 | `display.theme.font.sizeBase`         | Sets the size of large text.                                                   | 17                                                      |
 | `display.theme.font.sizeMedium`       | Sets the size of medium text.                                                  | 15                                                      |
 | `display.theme.font.sizeSmall`        | Sets the size of small text.                                                   | 12                                                      |
