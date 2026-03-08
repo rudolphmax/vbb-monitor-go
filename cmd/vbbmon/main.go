@@ -47,7 +47,7 @@ func main() {
   }()
 
   go func() {
-		window := display.Init()
+		window := display.Init(config.Display)
 		err := display.Run(window, departureData, messageData)
 
 		if err != nil {

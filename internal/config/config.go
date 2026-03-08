@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"os"
 	"rudolphmax/vbbmon/internal/api"
+	"rudolphmax/vbbmon/internal/display"
 )
 
 type Config struct {
   Api api.ApiParams;
   DepartureFetchInterval int;
   MessageFetchInterval int;
+  Display display.DisplayConfig;
 }
 
 func Read(path string) (Config, error) {

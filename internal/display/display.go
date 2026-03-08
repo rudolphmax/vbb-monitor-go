@@ -19,6 +19,12 @@ import (
 	t "rudolphmax/vbbmon/internal/display/theme"
 )
 
+type DisplayConfig struct {
+  Theme t.ThemeConfig;
+}
+
+var displayConfig DisplayConfig
+
 func Run(window *app.Window, departureData chan []api.Departure, messageData chan api.Messages) error {
  	events := make(chan event.Event)
  	acks := make(chan struct{})
@@ -136,10 +142,12 @@ func Run(window *app.Window, departureData chan []api.Departure, messageData cha
 	}
 }
 
-func Init() *app.Window {
+func Init(config DisplayConfig) *app.Window {
   window := new(app.Window)
 	window.Option(app.Title("vbbmon"))
 	window.Option(app.Size(unit.Dp(800), unit.Dp(600)))
+
+	t.Init(config.Theme)
 
 	return window
 }
