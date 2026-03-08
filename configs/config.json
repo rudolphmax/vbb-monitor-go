@@ -19,5 +19,17 @@
         "timeOffset": 12
       }
     ]
+  },
+  "display": {
+    "numLines": 8,
+    "theme": {
+      "font": {
+        "sizeBase": 17,
+        "sizeMedium": 15,
+        "sizeSmall": 12
+      },
+      "globalForegroundColor": "#FFFFFF",
+      "globalBackgroundColor": "#212121"
+    }
   }
 }

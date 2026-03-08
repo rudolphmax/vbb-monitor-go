@@ -20,6 +20,7 @@ import (
 
 type DisplayConfig struct {
   Theme t.ThemeConfig;
+  NumLines int;
 }
 
 var displayConfig DisplayConfig
@@ -55,6 +56,9 @@ func Run(window *app.Window, departureData chan []api.Departure, messageData cha
 	var messages api.Messages;
 	var timeString string
 
+	var ClockBarHeight int
+  var MessageBarHeight int
+
 	messagesOffset := 0
 
 	for {
@@ -85,12 +89,10 @@ func Run(window *app.Window, departureData chan []api.Departure, messageData cha
 
         var departureLines []layout.FlexChild
 
-        contentHeight := gtx.Constraints.Max.Y - 2 * (gtx.Sp(t.FontMedium) + 20)
-        desiredLineHeight := int(3.5 * float32(gtx.Sp(t.FontBase)))
-        numLines := math.Floor(float64(contentHeight / desiredLineHeight))
-        lineHeight := math.Ceil(float64(contentHeight) / numLines)
+        contentHeight := gtx.Constraints.Max.Y - (ClockBarHeight + MessageBarHeight)
+        lineHeight := math.Ceil(float64(contentHeight) / float64(displayConfig.NumLines))
 
-        for i := 0; i < min(len(departures), int(numLines)); i++ {
+        for i := 0; i < min(len(departures), int(displayConfig.NumLines)); i++ {
           departureLines = append(
             departureLines,
             components.Line{
@@ -111,9 +113,13 @@ func Run(window *app.Window, departureData chan []api.Departure, messageData cha
           layout.Stacked(func (gtx layout.Context) layout.Dimensions {
             return layout.Flex{ Axis: layout.Vertical }.Layout(gtx,
               layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-                return components.ClockBar{
+                dimensions := components.ClockBar{
                   TimeString: timeString,
                 }.Layout(theme, gtx)
+
+                ClockBarHeight = dimensions.Size.Y
+
+                return dimensions
              	}),
               layout.Flexed(1, func (gtx layout.Context) layout.Dimensions {
                 return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
@@ -121,11 +127,15 @@ func Run(window *app.Window, departureData chan []api.Departure, messageData cha
                 )
               }),
               layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-                return components.MessageBar{
+                dimensions := components.MessageBar{
                   Messages: messages,
                   Pos: messagesOffset,
                   ResetPos: func () { messagesOffset = 0 },
                 }.Layout(theme, gtx)
+
+                MessageBarHeight = dimensions.Size.Y
+
+                return dimensions
              	}),
             )
           }),
@@ -142,6 +152,8 @@ func Run(window *app.Window, departureData chan []api.Departure, messageData cha
 }
 
 func Init(config DisplayConfig) *app.Window {
+	displayConfig = config
+
   window := new(app.Window)
 	window.Option(app.Title("vbbmon"))
 	window.Option(app.Size(unit.Dp(800), unit.Dp(600)))

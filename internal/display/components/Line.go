@@ -31,33 +31,27 @@ func (l Line) Layout(theme *material.Theme, gtx layout.Context) layout.FlexChild
       layout.Stacked(func(gtx layout.Context) layout.Dimensions {
   			return layout.Flex{Alignment: layout.Middle, Axis: layout.Horizontal}.Layout(gtx,
           layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-            width := int(1.1 * float64(l.LineHeight))
-
-            layout.Background{}.Layout(gtx,
+            return layout.Background{}.Layout(gtx,
               func(gtx layout.Context) layout.Dimensions {
+                width := int(1.1 * float64(l.LineHeight))
+
                 defer clip.Rect{Max: image.Pt(width, l.LineHeight)}.Push(gtx.Ops).Pop()
                 paint.Fill(gtx.Ops, color.NRGBA{R: bgCol.R, G: bgCol.G, B: bgCol.B, A: 0xFF})
 
            			return layout.Dimensions{Size: image.Pt(width, l.LineHeight)}
               },
               func(gtx layout.Context) layout.Dimensions {
-                return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-                  layout.Flexed(1, func (gtx layout.Context) layout.Dimensions {
-                    titleDim := Title{
-                      Text:      l.Departure.Name,
-                      Color:     &color.NRGBA{R: fgCol.R, G: fgCol.G, B: fgCol.B, A: 0xFF},
-                      TextSize:  t.FontBase,
-                      Weight:    font.Bold,
-                      Alignment: text.Middle,
-                    }.Layout(theme, gtx)
+                titleDim := Title{
+                  Text:      l.Departure.Name,
+                  Color:     &color.NRGBA{R: fgCol.R, G: fgCol.G, B: fgCol.B, A: 0xFF},
+                  TextSize:  t.FontBase,
+                  Weight:    font.Bold,
+                  Alignment: text.Middle,
+                }.Layout(theme, gtx)
 
-                    return layout.Dimensions{Size: image.Pt(gtx.Constraints.Min.X, titleDim.Size.Y)}
-                  }),
-                )
+                return layout.Dimensions{Size: titleDim.Size}
               },
             )
-
-            return layout.Dimensions{Size: image.Pt(width, l.LineHeight)}
          	}),
       		layout.Rigid(layout.Spacer{Width: 15}.Layout),
           layout.Flexed(0.35, func(gtx layout.Context) layout.Dimensions {
