@@ -2,7 +2,6 @@ package components
 
 import (
 	"image"
-	"image/color"
 	"time"
 
 	"gioui.org/layout"
@@ -26,7 +25,7 @@ func (mb MessageBar) Layout(theme *material.Theme, gtx layout.Context) layout.Di
   return layout.Background{}.Layout(gtx,
     func(gtx layout.Context) layout.Dimensions {
       defer clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}.Push(gtx.Ops).Pop()
-     	paint.Fill(gtx.Ops, color.NRGBA{R: 0xFF, G: 0xFF, B: 0xFF, A: 0xFF})
+     	paint.Fill(gtx.Ops, t.ForegroundColor)
 
  			return layout.Dimensions{Size: image.Pt(gtx.Constraints.Max.X, gtx.Sp(t.FontMedium) + 20)}
     },
@@ -63,6 +62,7 @@ func (mb MessageBar) Layout(theme *material.Theme, gtx layout.Context) layout.Di
               paragraph = material.Label(theme, t.FontSmall, string("  +++  "))
   					}
 
+            paragraph.Color = t.BackgroundColor
             paragraph.Alignment = text.Start
             paragraph.TextSize = t.FontMedium
             parDimensions = paragraph.Layout(gtx)

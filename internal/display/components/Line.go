@@ -45,7 +45,7 @@ func (l Line) Layout(theme *material.Theme, gtx layout.Context) layout.FlexChild
                   layout.Flexed(1, func (gtx layout.Context) layout.Dimensions {
                     titleDim := Title{
                       Text:      l.Departure.Name,
-                      Color:     color.NRGBA{R: fgCol.R, G: fgCol.G, B: fgCol.B, A: 0xFF},
+                      Color:     &color.NRGBA{R: fgCol.R, G: fgCol.G, B: fgCol.B, A: 0xFF},
                       TextSize:  t.FontBase,
                       Weight:    font.Bold,
                       Alignment: text.Middle,
@@ -63,7 +63,6 @@ func (l Line) Layout(theme *material.Theme, gtx layout.Context) layout.FlexChild
           layout.Flexed(0.35, func(gtx layout.Context) layout.Dimensions {
             titleDim := Title{
               Text:      l.Departure.Stop,
-              Color:     color.NRGBA{0xFF, 0xFF, 0xFF, 0xFF},
               TextSize:  t.FontSmall,
               Alignment: text.Start,
             }.Layout(theme, gtx)
@@ -74,7 +73,6 @@ func (l Line) Layout(theme *material.Theme, gtx layout.Context) layout.FlexChild
           layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
             titleDim := Title{
               Text:      l.Departure.Direction,
-              Color:     color.NRGBA{0xFF, 0xFF, 0xFF, 0xFF},
               TextSize:  t.FontBase,
               Alignment: text.Start,
             }.Layout(theme, gtx)
@@ -101,7 +99,6 @@ func (l Line) Layout(theme *material.Theme, gtx layout.Context) layout.FlexChild
 
             titleDim := Title{
               Text:      titleText,
-              Color:     color.NRGBA{0xFF, 0xFF, 0xFF, 0xFF},
               TextSize:  t.FontBase,
               Alignment: text.End,
             }.Layout(theme, gtx)
@@ -117,7 +114,6 @@ func (l Line) Layout(theme *material.Theme, gtx layout.Context) layout.FlexChild
 
             titleDim := Title{
               Text:      textContent,
-              Color:     color.NRGBA{0xFF, 0xFF, 0xFF, 0xFF},
               TextSize:  t.FontSmall,
               Alignment: text.Middle,
             }.Layout(theme, gtx)

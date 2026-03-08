@@ -1,7 +1,6 @@
 package display
 
 import (
-	"image/color"
 	"math"
 	"time"
 
@@ -104,7 +103,7 @@ func Run(window *app.Window, departureData chan []api.Departure, messageData cha
         layout.Stack{}.Layout(gtx,
           layout.Expanded(func (gtx layout.Context) layout.Dimensions {
             defer clip.Rect{Max: gtx.Constraints.Max}.Push(gtx.Ops).Pop()
-           	paint.ColorOp{Color: color.NRGBA{0, 0, 0, 0xFF}}.Add(gtx.Ops)
+           	paint.ColorOp{Color: t.BackgroundColor}.Add(gtx.Ops)
            	paint.PaintOp{}.Add(gtx.Ops)
 
             return layout.Dimensions{Size: gtx.Constraints.Max}
