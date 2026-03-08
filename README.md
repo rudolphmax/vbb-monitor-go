@@ -15,7 +15,7 @@ Access to the VBB API is required for usage, refer to VBB for further informatio
 To build the project from source, run the following command.
 
 ```bash
-$ go build .
+$ go build ./cmd/vbbmon
 ```
 
 The built executable can then be found under `vbbmon`.
@@ -24,7 +24,7 @@ The built executable can then be found under `vbbmon`.
 ## Running
 
 ```bash
-$ go run .
+$ go run ./cmd/vbbmon
 ```
 
 Or simply run the executable built previously:
@@ -59,5 +59,5 @@ Before beginning development, install the git hooks provided via `pre-commit`. T
 
 ```bash
 $ pre-commit install
-$ go run .
+$ go run ./cmd/vbbmon
 ```

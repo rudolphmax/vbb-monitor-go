@@ -1,17 +1,18 @@
-package main
+package config
 
 import (
 	"encoding/json"
 	"os"
+	"rudolphmax/vbbmon/internal/api"
 )
 
 type Config struct {
-  Api ApiParams;
+  Api api.ApiParams;
   DepartureFetchInterval int;
   MessageFetchInterval int;
 }
 
-func readConfig(path string) (Config, error) {
+func Read(path string) (Config, error) {
   dat, err := os.ReadFile(path)
 
   var config Config

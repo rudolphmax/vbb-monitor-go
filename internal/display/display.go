@@ -1,4 +1,4 @@
-package main
+package display
 
 import (
 	"image"
@@ -17,6 +17,8 @@ import (
 	"gioui.org/text"
 	"gioui.org/unit"
 	"gioui.org/widget/material"
+
+	"rudolphmax/vbbmon/internal/api"
 )
 
 var fontBase = unit.Sp(17)
@@ -41,7 +43,7 @@ func (t Title) Layout(theme *material.Theme, gtx layout.Context) layout.Dimensio
   return title.Layout(gtx)
 }
 
-func MessageBar(theme *material.Theme, gtx layout.Context, messages Messages, pos int, resetPos func ()) layout.Dimensions {
+func MessageBar(theme *material.Theme, gtx layout.Context, messages api.Messages, pos int, resetPos func ()) layout.Dimensions {
   return layout.Background{}.Layout(gtx,
     func(gtx layout.Context) layout.Dimensions {
       defer clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}.Push(gtx.Ops).Pop()
@@ -106,7 +108,7 @@ func MessageBar(theme *material.Theme, gtx layout.Context, messages Messages, po
   )
 }
 
-func Line(theme *material.Theme, gtx layout.Context, departure Departure, lineHeight int) layout.FlexChild {
+func Line(theme *material.Theme, gtx layout.Context, departure api.Departure, lineHeight int) layout.FlexChild {
   var fgCol = departure.ForegroundColor
   var bgCol = departure.BackgroundColor
 
@@ -169,10 +171,10 @@ func Line(theme *material.Theme, gtx layout.Context, departure Departure, lineHe
           layout.Flexed(0.25, func(gtx layout.Context) layout.Dimensions {
             var titleText string
 
-            if (int(departure.dTime.Minutes()) <= 0) {
+            if (int(departure.DTime.Minutes()) <= 0) {
               titleText = "now"
 
-            } else if (int(departure.dTime.Minutes()) >= 10 + departure.TimeOffset) {
+            } else if (int(departure.DTime.Minutes()) >= 10 + departure.TimeOffset) {
               if (departure.RtTime != nil) {
                 titleText = departure.RtTimeString
               } else {
@@ -180,7 +182,7 @@ func Line(theme *material.Theme, gtx layout.Context, departure Departure, lineHe
               }
 
             } else {
-              titleText = strconv.Itoa(int(departure.dTime.Minutes()))
+              titleText = strconv.Itoa(int(departure.DTime.Minutes()))
             }
 
             titleDim := Title{
@@ -232,7 +234,7 @@ func Line(theme *material.Theme, gtx layout.Context, departure Departure, lineHe
 }
 
 
-func Display(window *app.Window, departureData chan []Departure, messageData chan Messages) error {
+func Run(window *app.Window, departureData chan []api.Departure, messageData chan api.Messages) error {
  	events := make(chan event.Event)
  	acks := make(chan struct{})
   timeChan := make(chan string)
@@ -259,8 +261,8 @@ func Display(window *app.Window, departureData chan []Departure, messageData cha
 
 	var ops op.Ops
 
-	var departures []Departure;
-	var messages Messages;
+	var departures []api.Departure;
+	var messages api.Messages;
 	var timeString string
 
 	messagesOffset := 0
@@ -363,7 +365,7 @@ func Display(window *app.Window, departureData chan []Departure, messageData cha
 	}
 }
 
-func initDisplay() *app.Window {
+func Init() *app.Window {
   window := new(app.Window)
 	window.Option(app.Title("vbbmon"))
 	window.Option(app.Size(unit.Dp(800), unit.Dp(600)))
@@ -371,6 +373,6 @@ func initDisplay() *app.Window {
 	return window
 }
 
-func destroyDisplay() {
+func Destroy() {
   app.Main()
 }

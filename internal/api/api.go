@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"encoding/json"
@@ -79,7 +79,7 @@ type Departure struct {
   Time *time.Time;
   RtTimeString string;
   RtTime *time.Time;
-  dTime time.Duration;
+  DTime time.Duration;
   TimeOffset int;
   ForegroundColor ApiColor;
   BackgroundColor ApiColor;
@@ -129,7 +129,7 @@ func preprocessDepartures(data []ApiDeparture, timeOffsets []time.Duration) []De
       Time: parsedTime,
       RtTimeString: parsedRtTimeString,
       RtTime: parsedRtTime,
-      dTime: dtime,
+      DTime: dtime,
       TimeOffset: int(timeOffset.Minutes()),
       ForegroundColor: dep.ProductAtStop.Icon.ForegroundColor,
       BackgroundColor: dep.ProductAtStop.Icon.BackgroundColor,
@@ -158,7 +158,7 @@ func preprocessDepartures(data []ApiDeparture, timeOffsets []time.Duration) []De
   return departures
 }
 
-func fetchDepartures(params ApiParams, departureData chan []Departure) {
+func FetchDepartures(params ApiParams, departureData chan []Departure) {
   var departures []ApiDeparture
   var timeOffsets []time.Duration
 
@@ -204,7 +204,7 @@ func fetchDepartures(params ApiParams, departureData chan []Departure) {
   departureData <- preprocessDepartures(departures, timeOffsets)
 }
 
-func fetchMessages(params ApiParams, messageData chan Messages) {
+func FetchMessages(params ApiParams, messageData chan Messages) {
   var himSearchLines string
   for i, e := range params.Stops {
     if (i == 0) {

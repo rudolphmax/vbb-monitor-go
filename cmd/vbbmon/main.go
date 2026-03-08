@@ -5,24 +5,28 @@ import (
 	"log"
 	"os"
 	"time"
+
+	"rudolphmax/vbbmon/internal/api"
+	"rudolphmax/vbbmon/internal/config"
+	"rudolphmax/vbbmon/internal/display"
 )
 
 func main() {
-  configPath := flag.String("config", "./config.json", "The path to the config file, e.g. ~/vbbmon/config.json")
+  configPath := flag.String("config", "./configs/config.json", "The path to the config file, e.g. ~/vbbmon/config.json")
   flag.Parse()
 
-  config, error := readConfig(*configPath)
+  config, error := config.Read(*configPath)
 
   if (error != nil) {
     log.Fatal("Error reading config", error)
   }
 
-  departureData := make(chan []Departure)
-  messageData := make(chan Messages)
+  departureData := make(chan []api.Departure)
+  messageData := make(chan api.Messages)
 
   go func() {
     for {
-      fetchDepartures(
+      api.FetchDepartures(
         config.Api,
         departureData,
       )
@@ -33,7 +37,7 @@ func main() {
 
   go func() {
     for {
-      fetchMessages(
+      api.FetchMessages(
         config.Api,
         messageData,
       )
@@ -43,8 +47,8 @@ func main() {
   }()
 
   go func() {
-		window := initDisplay()
-		err := Display(window, departureData, messageData)
+		window := display.Init()
+		err := display.Run(window, departureData, messageData)
 
 		if err != nil {
 			log.Fatal(err)
@@ -53,7 +57,7 @@ func main() {
 		os.Exit(0)
 	}()
 
-	destroyDisplay()
+	display.Destroy()
 	close(messageData)
 	close(departureData)
 }
