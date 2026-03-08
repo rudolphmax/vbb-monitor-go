@@ -16,7 +16,13 @@ import (
 	t "rudolphmax/vbbmon/internal/display/theme"
 )
 
-func MessageBar(theme *material.Theme, gtx layout.Context, messages api.Messages, pos int, resetPos func ()) layout.Dimensions {
+type MessageBar struct {
+  Messages api.Messages;
+  Pos int;
+  ResetPos func ()
+}
+
+func (mb MessageBar) Layout(theme *material.Theme, gtx layout.Context) layout.Dimensions {
   return layout.Background{}.Layout(gtx,
     func(gtx layout.Context) layout.Dimensions {
       defer clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)}.Push(gtx.Ops).Pop()
@@ -27,20 +33,20 @@ func MessageBar(theme *material.Theme, gtx layout.Context, messages api.Messages
     func(gtx layout.Context) layout.Dimensions {
       var parDimensions layout.Dimensions
 
-      if (len(messages) > 0) {
+      if (len(mb.Messages) > 0) {
         var visList = layout.List{
           Axis: layout.Horizontal,
           ScrollToEnd: true,
           Position: layout.Position{
             BeforeEnd: true,
-            Offset: 5 * pos,
+            Offset: 5 * mb.Pos,
           },
         }
 
         inv := op.InvalidateCmd{At: gtx.Now.Add(time.Second / 25)}
   			gtx.Execute(inv)
 
-        var listLength = 2 * len(messages) + 1
+        var listLength = 2 * len(mb.Messages) + 1
 
         var lastElementsWidth int = 0
         var listWidth int = 0
@@ -52,7 +58,7 @@ func MessageBar(theme *material.Theme, gtx layout.Context, messages api.Messages
   					var paragraph material.LabelStyle
 
   					if (index % 2 != 0) {
-              paragraph = material.Label(theme, t.FontSmall, string(messages[index/2]))
+              paragraph = material.Label(theme, t.FontSmall, string(mb.Messages[index/2]))
   					} else {
               paragraph = material.Label(theme, t.FontSmall, string("  +++  "))
   					}
@@ -71,8 +77,8 @@ func MessageBar(theme *material.Theme, gtx layout.Context, messages api.Messages
           },
   			)
 
-        if (5 * pos >= listWidth - lastElementsWidth) {
-          resetPos()
+        if (5 * mb.Pos >= listWidth - lastElementsWidth) {
+          mb.ResetPos()
         }
       }
 

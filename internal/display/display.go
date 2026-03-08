@@ -1,7 +1,6 @@
 package display
 
 import (
-	"image"
 	"image/color"
 	"math"
 	"time"
@@ -12,7 +11,6 @@ import (
 	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
-	"gioui.org/text"
 	"gioui.org/unit"
 	"gioui.org/widget/material"
 
@@ -90,7 +88,10 @@ func Run(window *app.Window, departureData chan []api.Departure, messageData cha
         for i := 0; i < min(len(departures), int(numLines)); i++ {
           departureLines = append(
             departureLines,
-            components.Line(theme, gtx, departures[i], int(lineHeight)),
+            components.Line{
+              Departure: departures[i],
+              LineHeight: int(lineHeight),
+            }.Layout(theme, gtx),
           )
         }
 
@@ -105,30 +106,9 @@ func Run(window *app.Window, departureData chan []api.Departure, messageData cha
           layout.Stacked(func (gtx layout.Context) layout.Dimensions {
             return layout.Flex{ Axis: layout.Vertical }.Layout(gtx,
               layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-                return layout.Background{}.Layout(gtx,
-                  func(gtx layout.Context) layout.Dimensions {
-                    defer clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, gtx.Sp(t.FontMedium) + 20)}.Push(gtx.Ops).Pop()
-                   	paint.Fill(gtx.Ops, color.NRGBA{R: 0xFF, G: 0xFF, B: 0xFF, A: 0xFF})
-
-               			return layout.Dimensions{Size: image.Pt(gtx.Constraints.Max.X, gtx.Sp(t.FontMedium) + 20)}
-                  },
-                  func(gtx layout.Context) layout.Dimensions {
-                    return layout.Flex{}.Layout(gtx,
-                      layout.Flexed(1, func (gtx layout.Context) layout.Dimensions {
-                        return layout.Inset{Top: 10, Bottom: 10}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-                          titleDimensions := components.Title{
-                            Text:      timeString,
-                            Color:     color.NRGBA{0, 0, 0, 0xFF},
-                            Alignment: text.Middle,
-                            TextSize:  t.FontMedium,
-                          }.Layout(theme, gtx)
-
-                          return layout.Dimensions{Size: titleDimensions.Size}
-                        })
-                      }),
-                    )
-                  },
-                )
+                return components.ClockBar{
+                  TimeString: timeString,
+                }.Layout(theme, gtx)
              	}),
               layout.Flexed(1, func (gtx layout.Context) layout.Dimensions {
                 return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
@@ -136,7 +116,11 @@ func Run(window *app.Window, departureData chan []api.Departure, messageData cha
                 )
               }),
               layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-                return components.MessageBar(theme, gtx, messages, messagesOffset, func () { messagesOffset = 0 })
+                return components.MessageBar{
+                  Messages: messages,
+                  Pos: messagesOffset,
+                  ResetPos: func () { messagesOffset = 0 },
+                }.Layout(theme, gtx)
              	}),
             )
           }),

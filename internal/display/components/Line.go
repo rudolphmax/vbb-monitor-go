@@ -17,29 +17,34 @@ import (
 	t "rudolphmax/vbbmon/internal/display/theme"
 )
 
-func Line(theme *material.Theme, gtx layout.Context, departure api.Departure, lineHeight int) layout.FlexChild {
-  var fgCol = departure.ForegroundColor
-  var bgCol = departure.BackgroundColor
+type Line struct {
+  Departure api.Departure;
+  LineHeight int;
+}
+
+func (l Line) Layout(theme *material.Theme, gtx layout.Context) layout.FlexChild {
+  var fgCol = l.Departure.ForegroundColor
+  var bgCol = l.Departure.BackgroundColor
 
   return layout.Rigid(func(gtx layout.Context) layout.Dimensions {
     layout.Stack{}.Layout(gtx,
       layout.Stacked(func(gtx layout.Context) layout.Dimensions {
   			return layout.Flex{Alignment: layout.Middle, Axis: layout.Horizontal}.Layout(gtx,
           layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-            width := int(1.1 * float64(lineHeight))
+            width := int(1.1 * float64(l.LineHeight))
 
             layout.Background{}.Layout(gtx,
               func(gtx layout.Context) layout.Dimensions {
-                defer clip.Rect{Max: image.Pt(width, lineHeight)}.Push(gtx.Ops).Pop()
+                defer clip.Rect{Max: image.Pt(width, l.LineHeight)}.Push(gtx.Ops).Pop()
                 paint.Fill(gtx.Ops, color.NRGBA{R: bgCol.R, G: bgCol.G, B: bgCol.B, A: 0xFF})
 
-           			return layout.Dimensions{Size: image.Pt(width, lineHeight)}
+           			return layout.Dimensions{Size: image.Pt(width, l.LineHeight)}
               },
               func(gtx layout.Context) layout.Dimensions {
                 return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
                   layout.Flexed(1, func (gtx layout.Context) layout.Dimensions {
                     titleDim := Title{
-                      Text:      departure.Name,
+                      Text:      l.Departure.Name,
                       Color:     color.NRGBA{R: fgCol.R, G: fgCol.G, B: fgCol.B, A: 0xFF},
                       TextSize:  t.FontBase,
                       Weight:    font.Bold,
@@ -52,12 +57,12 @@ func Line(theme *material.Theme, gtx layout.Context, departure api.Departure, li
               },
             )
 
-            return layout.Dimensions{Size: image.Pt(width, lineHeight)}
+            return layout.Dimensions{Size: image.Pt(width, l.LineHeight)}
          	}),
       		layout.Rigid(layout.Spacer{Width: 15}.Layout),
           layout.Flexed(0.35, func(gtx layout.Context) layout.Dimensions {
             titleDim := Title{
-              Text:      departure.Stop,
+              Text:      l.Departure.Stop,
               Color:     color.NRGBA{0xFF, 0xFF, 0xFF, 0xFF},
               TextSize:  t.FontSmall,
               Alignment: text.Start,
@@ -68,7 +73,7 @@ func Line(theme *material.Theme, gtx layout.Context, departure api.Departure, li
           layout.Rigid(layout.Spacer{Width: 15}.Layout),
           layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
             titleDim := Title{
-              Text:      departure.Direction,
+              Text:      l.Departure.Direction,
               Color:     color.NRGBA{0xFF, 0xFF, 0xFF, 0xFF},
               TextSize:  t.FontBase,
               Alignment: text.Start,
@@ -80,18 +85,18 @@ func Line(theme *material.Theme, gtx layout.Context, departure api.Departure, li
           layout.Flexed(0.25, func(gtx layout.Context) layout.Dimensions {
             var titleText string
 
-            if (int(departure.DTime.Minutes()) <= 0) {
+            if (int(l.Departure.DTime.Minutes()) <= 0) {
               titleText = "now"
 
-            } else if (int(departure.DTime.Minutes()) >= 10 + departure.TimeOffset) {
-              if (departure.RtTime != nil) {
-                titleText = departure.RtTimeString
+            } else if (int(l.Departure.DTime.Minutes()) >= 10 + l.Departure.TimeOffset) {
+              if (l.Departure.RtTime != nil) {
+                titleText = l.Departure.RtTimeString
               } else {
-                titleText = departure.TimeString
+                titleText = l.Departure.TimeString
               }
 
             } else {
-              titleText = strconv.Itoa(int(departure.DTime.Minutes()))
+              titleText = strconv.Itoa(int(l.Departure.DTime.Minutes()))
             }
 
             titleDim := Title{
@@ -106,7 +111,7 @@ func Line(theme *material.Theme, gtx layout.Context, departure api.Departure, li
           layout.Rigid(layout.Spacer{Width: 5}.Layout),
           layout.Rigid(func(gtx layout.Context) layout.Dimensions {
             textContent := " "
-            if (departure.RtTime != nil) {
+            if (l.Departure.RtTime != nil) {
               textContent = "*"
             }
 
@@ -123,14 +128,14 @@ func Line(theme *material.Theme, gtx layout.Context, departure api.Departure, li
         )
   		}),
       layout.Expanded(func(gtx layout.Context) layout.Dimensions {
-  			if (departure.Cancelled) {
+  			if (l.Departure.Cancelled) {
           return layout.Inset{ Left: 10, Right: 10 }.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-           	defer op.Offset(image.Pt(0, lineHeight / 2)).Push(gtx.Ops).Pop()
+           	defer op.Offset(image.Pt(0, l.LineHeight / 2)).Push(gtx.Ops).Pop()
             defer clip.Rect{Max: image.Pt(gtx.Constraints.Max.X, 4)}.Push(gtx.Ops).Pop()
             paint.ColorOp{Color: color.NRGBA{R: 0x94, G: 0x11, B: 0x00, A: 0xE5}}.Add(gtx.Ops)
             paint.PaintOp{}.Add(gtx.Ops)
 
-            return layout.Dimensions{Size: image.Pt(gtx.Constraints.Min.X, lineHeight / 2)}
+            return layout.Dimensions{Size: image.Pt(gtx.Constraints.Min.X, l.LineHeight / 2)}
          	})
         }
 
@@ -138,6 +143,6 @@ func Line(theme *material.Theme, gtx layout.Context, departure api.Departure, li
       }),
     )
 
-    return layout.Dimensions{Size: image.Pt(gtx.Constraints.Min.X, lineHeight)}
+    return layout.Dimensions{Size: image.Pt(gtx.Constraints.Min.X, l.LineHeight)}
  	})
 }
