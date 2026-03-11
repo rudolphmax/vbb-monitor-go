@@ -15,3 +15,13 @@ func HexToRGBA(hexColor string) color.RGBA {
     A: 255,
   }
 }
+
+func Gcd(a int, b int) int {
+  for (b != 0) {
+    t := b
+    b = a % b
+    a = t
+  }
+
+  return a
+}

@@ -26,7 +26,7 @@ type DisplayConfig struct {
 
 var displayConfig DisplayConfig
 
-func Run(window *app.Window, departureData chan []api.Departure, messageData chan api.Messages, errorData chan string) error {
+func Run(window *app.Window, data chan api.Data) error {
  	events := make(chan event.Event)
  	acks := make(chan struct{})
   timeChan := make(chan string)
@@ -53,7 +53,7 @@ func Run(window *app.Window, departureData chan []api.Departure, messageData cha
 
 	var ops op.Ops
 
-	var error string;
+	var error error;
 	var departures []api.Departure;
 	var messages api.Messages;
 	var timeString string
@@ -65,15 +65,13 @@ func Run(window *app.Window, departureData chan []api.Departure, messageData cha
 
 	for {
   	select {
-    case error = <- errorData:
-      window.Invalidate()
+    case d := <- data:
+      error = d.Error
+      departures = d.Departures
+      messages = d.Messages
 
-   	case departures = <- departureData:
-      window.Invalidate()
-
-   	case messages = <- messageData:
       // Appending first and second element to end of list for "continous scrolling"
-      if (len(messages) > 0) {
+      if (len(d.Messages) > 0) {
         messages = append(messages, messages[0])
         messages = append(messages, messages[min(1, len(messages))])
       }
@@ -127,13 +125,13 @@ func Run(window *app.Window, departureData chan []api.Departure, messageData cha
                 return dimensions
              	}),
               layout.Flexed(1, func (gtx layout.Context) layout.Dimensions {
-                if (error == "") {
+                if (error == nil) {
                   return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
                     departureLines...,
                   )
                 } else {
                   return components.ErrorBox{
-                    Error: error,
+                    Error: error.Error(),
                   }.Layout(theme, gtx)
                 }
               }),

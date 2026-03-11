@@ -9,6 +9,7 @@ import (
 	"rudolphmax/vbbmon/internal/api"
 	"rudolphmax/vbbmon/internal/config"
 	"rudolphmax/vbbmon/internal/display"
+	"rudolphmax/vbbmon/internal/utils"
 )
 
 func main() {
@@ -21,41 +22,50 @@ func main() {
     log.Fatal("Error reading config", configError)
   }
 
-  errorData := make(chan string)
-  departureData := make(chan []api.Departure)
-  messageData := make(chan api.Messages)
+  data := make(chan api.Data)
 
   go func() {
+    var interval int
+    sleepDuration := utils.Gcd(config.DepartureFetchInterval, config.MessageFetchInterval)
+
+    var departures []api.Departure
+    var messages api.Messages
+    var error error
+
     for {
-      errorData <- ""
+      if (interval % config.DepartureFetchInterval == 0) {
+        departures, error = api.FetchDepartures(config.Api)
+      }
 
-      api.FetchDepartures(
-        config.Api,
-        departureData,
-        errorData,
-      )
+      if (interval % config.MessageFetchInterval == 0) {
+        messages, error = api.FetchMessages(config.Api)
+      }
 
-      time.Sleep(time.Duration(config.DepartureFetchInterval) * time.Second)
-    }
-  }()
+      if (interval % min(config.DepartureFetchInterval, config.MessageFetchInterval) == 0) {
+        if (error != nil) {
+          data <- api.Data{Error: error}
 
-  go func() {
-    for {
-      errorData <- ""
+        } else {
+          data <- api.Data{
+            Departures: departures,
+            Messages: messages,
+            Error: nil,
+          }
+        }
+      }
 
-      api.FetchMessages(
-        config.Api,
-        messageData,
-        errorData,
-      )
+      if (interval == max(config.DepartureFetchInterval, config.MessageFetchInterval)) {
+        interval = 0
+      }
 
-      time.Sleep(time.Duration(config.MessageFetchInterval) * time.Second)
+      interval += sleepDuration
+      time.Sleep(time.Duration(sleepDuration) * time.Second)
     }
   }()
 
   go func() {
 		window := display.Init(config.Display)
-		err := display.Run(window, departureData, messageData, errorData)
+		err := display.Run(window, data)
 
 		if err != nil {
 			log.Fatal(err)
@@ -65,6 +75,5 @@ func main() {
 	}()
 
 	display.Destroy()
-	close(messageData)
-	close(departureData)
+	close(data)
 }

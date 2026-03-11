@@ -158,7 +158,14 @@ func preprocessDepartures(data []ApiDeparture, timeOffsets []time.Duration, remo
   return departures
 }
 
-func FetchDepartures(params ApiParams, departureData chan []Departure, errorData chan string) {
+type Data struct {
+  Departures []Departure;
+  Messages Messages;
+  Error error;
+}
+
+func FetchDepartures(params ApiParams) ([]Departure, error) {
+  var error error
   var departures []ApiDeparture
   var timeOffsets []time.Duration
 
@@ -172,14 +179,14 @@ func FetchDepartures(params ApiParams, departureData chan []Departure, errorData
     resp, err := http.Get(params.Base + "/departureBoard/?accessId=" + params.AccessId + "&id=" + escapedStopId + "&time=" + offsetTimestamp + "&lines=" + stop.Lines + "&maxJourneys=" + strconv.Itoa(stop.MaxDepartures) + "&format=json")
 
     if err != nil {
-      errorData <- err.Error()
+      error = err
       break
     }
 
     body, err := io.ReadAll(resp.Body)
 
     if err != nil {
-      errorData <- err.Error()
+      error = err
       break
     }
 
@@ -187,7 +194,7 @@ func FetchDepartures(params ApiParams, departureData chan []Departure, errorData
     err = json.Unmarshal([]byte(body), &res);
 
     if err != nil {
-      errorData <- err.Error()
+      error = err
       break
    	}
 
@@ -208,10 +215,14 @@ func FetchDepartures(params ApiParams, departureData chan []Departure, errorData
     resp.Body.Close()
   }
 
-  departureData <- preprocessDepartures(departures, timeOffsets, params.RemoveStopSuffix)
+  if (error != nil) {
+    return nil, error
+  }
+
+  return preprocessDepartures(departures, timeOffsets, params.RemoveStopSuffix), nil
 }
 
-func FetchMessages(params ApiParams, messageData chan Messages, errorData chan string) {
+func FetchMessages(params ApiParams) (Messages, error) {
   var himSearchLines string
   for i, e := range params.Stops {
     if (i == 0) {
@@ -225,23 +236,20 @@ func FetchMessages(params ApiParams, messageData chan Messages, errorData chan s
   resp, err := http.Get(params.Base + "/himsearch/?accessId=" + params.AccessId + "&lines=" + himSearchLines + "&himcategory=1&format=json")
 
   if err != nil {
-    errorData <- err.Error()
-    return
+    return nil, err
   }
 
   body, err := io.ReadAll(resp.Body)
 
   if err != nil {
-    errorData <- err.Error()
-    return
+    return nil, err
   }
 
   var res ApiMessages
   err = json.Unmarshal([]byte(body), &res);
 
   if err != nil {
-    errorData <- err.Error()
-    return
+    return nil, err
   }
 
   // Filtering non-active messages
@@ -257,5 +265,5 @@ func FetchMessages(params ApiParams, messageData chan Messages, errorData chan s
     messages = append(messages, Message(msg.Text))
   }
 
-  messageData <- messages
+  return messages, nil
 }
