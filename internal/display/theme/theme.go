@@ -9,6 +9,7 @@ import (
 
 type ThemeConfig struct {
   Font struct {
+    SizeLarge int;
     SizeBase int;
     SizeMedium int;
     SizeSmall int;
@@ -17,6 +18,7 @@ type ThemeConfig struct {
   GlobalBackgroundColor string;
 };
 
+var FontLarge unit.Sp
 var FontBase unit.Sp
 var FontMedium unit.Sp
 var FontSmall unit.Sp
@@ -25,6 +27,7 @@ var ForegroundColor color.NRGBA;
 var BackgroundColor color.NRGBA;
 
 func Init(config ThemeConfig) {
+  FontLarge = unit.Sp(config.Font.SizeLarge)
   FontBase = unit.Sp(config.Font.SizeBase)
   FontMedium = unit.Sp(config.Font.SizeMedium)
   FontSmall = unit.Sp(config.Font.SizeSmall)

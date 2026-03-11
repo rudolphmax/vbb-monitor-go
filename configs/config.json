@@ -18,13 +18,15 @@
         "maxDepartures": 5,
         "timeOffset": 12
       }
-    ]
+    ],
+    "removeStopSuffix": " (Berlin)"
   },
   "display": {
     "numLines": 8,
     "scrollSpeed": 3.5,
     "theme": {
       "font": {
+        "sizeLarge": 22,
         "sizeBase": 17,
         "sizeMedium": 15,
         "sizeSmall": 12

@@ -24,6 +24,7 @@ type ApiParams struct {
   Base string;
   AccessId string;
   Stops []Stop;
+  RemoveStopSuffix string;
 }
 
 type ApiColor struct {
@@ -85,7 +86,7 @@ type Departure struct {
   BackgroundColor ApiColor;
 };
 
-func preprocessDepartures(data []ApiDeparture, timeOffsets []time.Duration) []Departure {
+func preprocessDepartures(data []ApiDeparture, timeOffsets []time.Duration, removeStopSuffix string) []Departure {
   var departures []Departure
 
   for i := range data {
@@ -122,7 +123,7 @@ func preprocessDepartures(data []ApiDeparture, timeOffsets []time.Duration) []De
 
     departures = append(departures, Departure{
       Name: dep.Name,
-      Stop: dep.Stop,
+      Stop: strings.ReplaceAll(dep.Stop, removeStopSuffix, ""),
       Direction: dep.Direction,
       Cancelled: dep.Cancelled,
       TimeString: parsedTimeString,
@@ -201,7 +202,7 @@ func FetchDepartures(params ApiParams, departureData chan []Departure) {
     resp.Body.Close()
   }
 
-  departureData <- preprocessDepartures(departures, timeOffsets)
+  departureData <- preprocessDepartures(departures, timeOffsets, params.RemoveStopSuffix)
 }
 
 func FetchMessages(params ApiParams, messageData chan Messages) {

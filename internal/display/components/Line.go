@@ -44,7 +44,7 @@ func (l Line) Layout(theme *material.Theme, gtx layout.Context) layout.FlexChild
                 titleDim := Title{
                   Text:      l.Departure.Name,
                   Color:     &color.NRGBA{R: fgCol.R, G: fgCol.G, B: fgCol.B, A: 0xFF},
-                  TextSize:  t.FontBase,
+                  TextSize:  t.FontLarge,
                   Weight:    font.Bold,
                   Alignment: text.Middle,
                 }.Layout(theme, gtx)
