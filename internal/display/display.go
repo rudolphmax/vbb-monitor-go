@@ -26,7 +26,7 @@ type DisplayConfig struct {
 
 var displayConfig DisplayConfig
 
-func Run(window *app.Window, departureData chan []api.Departure, messageData chan api.Messages) error {
+func Run(window *app.Window, departureData chan []api.Departure, messageData chan api.Messages, errorData chan string) error {
  	events := make(chan event.Event)
  	acks := make(chan struct{})
   timeChan := make(chan string)
@@ -53,6 +53,7 @@ func Run(window *app.Window, departureData chan []api.Departure, messageData cha
 
 	var ops op.Ops
 
+	var error string;
 	var departures []api.Departure;
 	var messages api.Messages;
 	var timeString string
@@ -64,6 +65,9 @@ func Run(window *app.Window, departureData chan []api.Departure, messageData cha
 
 	for {
   	select {
+    case error = <- errorData:
+      window.Invalidate()
+
    	case departures = <- departureData:
       window.Invalidate()
 
@@ -123,19 +127,29 @@ func Run(window *app.Window, departureData chan []api.Departure, messageData cha
                 return dimensions
              	}),
               layout.Flexed(1, func (gtx layout.Context) layout.Dimensions {
-                return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-                  departureLines...,
-                )
+                if (error == "") {
+                  return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+                    departureLines...,
+                  )
+                } else {
+                  return components.ErrorBox{
+                    Error: error,
+                  }.Layout(theme, gtx)
+                }
               }),
               layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-                dimensions := components.MessageBar{
-                  Messages: messages,
-                  Pos: messagesOffset,
-                  ResetPos: func () { messagesOffset = 0 },
-                  Speed: displayConfig.ScrollSpeed,
-                }.Layout(theme, gtx)
+                var dimensions layout.Dimensions
 
-                MessageBarHeight = dimensions.Size.Y
+                if (len(messages) > 0) {
+                  dimensions = components.MessageBar{
+                    Messages: messages,
+                    Pos: messagesOffset,
+                    ResetPos: func () { messagesOffset = 0 },
+                    Speed: displayConfig.ScrollSpeed,
+                  }.Layout(theme, gtx)
+
+                  MessageBarHeight = dimensions.Size.Y
+                }
 
                 return dimensions
              	}),

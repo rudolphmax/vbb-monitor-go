@@ -27,12 +27,13 @@
     "theme": {
       "font": {
         "sizeLarge": 22,
-        "sizeBase": 17,
-        "sizeMedium": 15,
+        "sizeBase": 19,
+        "sizeMedium": 17,
         "sizeSmall": 12
       },
       "globalForegroundColor": "#FFFFFF",
-      "globalBackgroundColor": "#212121"
+      "globalBackgroundColor": "#212121",
+      "errorColor": "#F8430D"
     }
   }
 }

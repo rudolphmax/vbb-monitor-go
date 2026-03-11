@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -159,7 +158,7 @@ func preprocessDepartures(data []ApiDeparture, timeOffsets []time.Duration, remo
   return departures
 }
 
-func FetchDepartures(params ApiParams, departureData chan []Departure) {
+func FetchDepartures(params ApiParams, departureData chan []Departure, errorData chan string) {
   var departures []ApiDeparture
   var timeOffsets []time.Duration
 
@@ -173,16 +172,23 @@ func FetchDepartures(params ApiParams, departureData chan []Departure) {
     resp, err := http.Get(params.Base + "/departureBoard/?accessId=" + params.AccessId + "&id=" + escapedStopId + "&time=" + offsetTimestamp + "&lines=" + stop.Lines + "&maxJourneys=" + strconv.Itoa(stop.MaxDepartures) + "&format=json")
 
     if err != nil {
-      panic(err)
+      errorData <- err.Error()
+      break
     }
 
     body, err := io.ReadAll(resp.Body)
 
-    var res ApiResponse
+    if err != nil {
+      errorData <- err.Error()
+      break
+    }
 
+    var res ApiResponse
     err = json.Unmarshal([]byte(body), &res);
-   	if err != nil {
-  		fmt.Println("error:", err)
+
+    if err != nil {
+      errorData <- err.Error()
+      break
    	}
 
     // Filtering directions
@@ -193,7 +199,7 @@ func FetchDepartures(params ApiParams, departureData chan []Departure) {
       },
     )
 
-    for _ = range res.Departure {
+    for range res.Departure {
       timeOffsets = append(timeOffsets, timeOffset)
     }
 
@@ -205,7 +211,7 @@ func FetchDepartures(params ApiParams, departureData chan []Departure) {
   departureData <- preprocessDepartures(departures, timeOffsets, params.RemoveStopSuffix)
 }
 
-func FetchMessages(params ApiParams, messageData chan Messages) {
+func FetchMessages(params ApiParams, messageData chan Messages, errorData chan string) {
   var himSearchLines string
   for i, e := range params.Stops {
     if (i == 0) {
@@ -219,16 +225,23 @@ func FetchMessages(params ApiParams, messageData chan Messages) {
   resp, err := http.Get(params.Base + "/himsearch/?accessId=" + params.AccessId + "&lines=" + himSearchLines + "&himcategory=1&format=json")
 
   if err != nil {
-    panic(err)
+    errorData <- err.Error()
+    return
   }
 
   body, err := io.ReadAll(resp.Body)
 
-  var res ApiMessages
-
-  err = json.Unmarshal([]byte(body), &res);
   if err != nil {
-		fmt.Println("error:", err)
+    errorData <- err.Error()
+    return
+  }
+
+  var res ApiMessages
+  err = json.Unmarshal([]byte(body), &res);
+
+  if err != nil {
+    errorData <- err.Error()
+    return
   }
 
   // Filtering non-active messages
