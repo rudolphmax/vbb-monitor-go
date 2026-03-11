@@ -73,7 +73,7 @@ func (mb MessageBar) Layout(theme *material.Theme, gtx layout.Context) layout.Di
           },
   			)
 
-        if (5 * mb.Pos >= listWidth - lastElementsWidth) {
+        if (int(mb.Speed) * mb.Pos >= listWidth - lastElementsWidth) {
           mb.ResetPos()
         }
       }
