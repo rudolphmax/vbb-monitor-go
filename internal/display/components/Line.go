@@ -17,6 +17,7 @@ import (
 	t "rudolphmax/vbbmon/internal/display/theme"
 )
 
+// Line is a component that displays a single departure line with the departure name, stop, direction and time until departure.
 type Line struct {
   Departure api.Departure;
   LineHeight int;

@@ -24,12 +24,14 @@ func main() {
 
   data := make(chan api.Data)
 
+  // Fetcher goroutine is responsible for fetching departures and messages.
+  // After fetching the `data` channel is populated with the latest data / error.
   go func() {
     var interval int
     sleepDuration := utils.Gcd(config.DepartureFetchInterval, config.MessageFetchInterval)
 
     var departures []api.Departure
-    var messages api.Messages
+    var messages []api.Message
     var error error
 
     for {
@@ -63,6 +65,7 @@ func main() {
     }
   }()
 
+  // Display goroutine is responsible for running the UI.
   go func() {
 		window := display.Init(config.Display)
 		err := display.Run(window, data)

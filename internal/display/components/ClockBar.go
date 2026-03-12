@@ -12,6 +12,7 @@ import (
 	t "rudolphmax/vbbmon/internal/display/theme"
 )
 
+// ClockBar is a component that displays the current time in a screen-wide bar.
 type ClockBar struct {
   TimeString string;
 }

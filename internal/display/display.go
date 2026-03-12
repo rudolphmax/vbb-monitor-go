@@ -55,7 +55,7 @@ func Run(window *app.Window, data chan api.Data) error {
 
 	var error error;
 	var departures []api.Departure;
-	var messages api.Messages;
+	var messages []api.Message;
 	var timeString string
 
 	var ClockBarHeight int

@@ -13,8 +13,9 @@ import (
 	t "rudolphmax/vbbmon/internal/display/theme"
 )
 
+// MessageBar is a component that displays a list of messages that infinitely scrolls horizontsally like a newsticker.
 type MessageBar struct {
-  Messages api.Messages;
+  Messages []api.Message;
   Pos int;
   ResetPos func ()
   Speed float32;

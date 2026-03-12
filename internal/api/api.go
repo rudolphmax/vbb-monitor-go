@@ -11,7 +11,16 @@ import (
 	"time"
 )
 
-type Stop struct {
+// ApiParams represents the parameters accepted by vbbmon's api functions
+type ApiParams struct {
+  Base string;
+  AccessId string;
+  Stops []ApiStop;
+  RemoveStopSuffix string;
+}
+
+// ApiStop represents a single stop as represented in the api
+type ApiStop struct {
   ID string;
   Lines string;
   MaxDepartures int;
@@ -19,19 +28,14 @@ type Stop struct {
   Direction string;
 }
 
-type ApiParams struct {
-  Base string;
-  AccessId string;
-  Stops []Stop;
-  RemoveStopSuffix string;
-}
-
+// ApiColor represents a color as represented in the api
 type ApiColor struct {
   R uint8;
   G uint8;
   B uint8;
 }
 
+// ApiMessage represents a HIM message as represented in the api
 type ApiMessage struct {
   AffectedProduct []struct{
     Name string;
@@ -41,10 +45,7 @@ type ApiMessage struct {
   Text string;
 }
 
-type ApiMessages struct {
-  Message []ApiMessage;
-}
-
+// ApiDeparture represents a departure as represented in the api
 type ApiDeparture struct {
   Name string;
   Stop string;
@@ -63,13 +64,10 @@ type ApiDeparture struct {
   }
 };
 
-type ApiResponse struct {
-  Departure []ApiDeparture;
-}
-
-type Messages []Message;
+// Message represents the internal data model of a single (disruption) message
 type Message string;
 
+// Departure represents the internal data model of a single departure
 type Departure struct {
   Name string;
   Stop string;
@@ -85,6 +83,18 @@ type Departure struct {
   BackgroundColor ApiColor;
 };
 
+// Data represents the chunk in which data is passed through the application.
+// Departures and Messages are to be nil, iff an error is present. Else, Error is to be nil.
+type Data struct {
+  Departures []Departure;
+  Messages []Message;
+  Error error;
+}
+
+// preprocessDepartures transform raw departures as returned by the api into the internal data model and sorts them
+// by departure time.
+// This includes calculating `dTime` (difference between departure time and current time), parsing time data,
+// removing `removeStopSuffix` from stop names, and, of course, sorting.
 func preprocessDepartures(data []ApiDeparture, timeOffsets []time.Duration, removeStopSuffix string) []Departure {
   var departures []Departure
 
@@ -158,12 +168,8 @@ func preprocessDepartures(data []ApiDeparture, timeOffsets []time.Duration, remo
   return departures
 }
 
-type Data struct {
-  Departures []Departure;
-  Messages Messages;
-  Error error;
-}
-
+// FetchDepartures calls the api once for every configured stop, filters out wrong directions, and preprocesses the result.
+// Returns an array of Departures and nil, iff no error occurred. Else, returns nil and the error.
 func FetchDepartures(params ApiParams) ([]Departure, error) {
   var error error
   var departures []ApiDeparture
@@ -190,7 +196,7 @@ func FetchDepartures(params ApiParams) ([]Departure, error) {
       break
     }
 
-    var res ApiResponse
+    var res struct { Departure []ApiDeparture }
     err = json.Unmarshal([]byte(body), &res);
 
     if err != nil {
@@ -222,7 +228,10 @@ func FetchDepartures(params ApiParams) ([]Departure, error) {
   return preprocessDepartures(departures, timeOffsets, params.RemoveStopSuffix), nil
 }
 
-func FetchMessages(params ApiParams) (Messages, error) {
+// FetchMessages calls the api for HIM messages for the configured lines, filters out inactives, and preprocesses the result.
+// A list of configured lines is constructed from the configured stops.
+// Returns an array of Messages and nil, iff no error occurred. Else, returns nil and the error.
+func FetchMessages(params ApiParams) ([]Message, error) {
   var himSearchLines string
   for i, e := range params.Stops {
     if (i == 0) {
@@ -245,7 +254,7 @@ func FetchMessages(params ApiParams) (Messages, error) {
     return nil, err
   }
 
-  var res ApiMessages
+  var res struct { Message []ApiMessage }
   err = json.Unmarshal([]byte(body), &res);
 
   if err != nil {
@@ -260,7 +269,7 @@ func FetchMessages(params ApiParams) (Messages, error) {
     },
   )
 
-  var messages Messages
+  var messages []Message
   for _, msg := range res.Message {
     messages = append(messages, Message(msg.Text))
   }

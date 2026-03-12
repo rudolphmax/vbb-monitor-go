@@ -10,6 +10,7 @@ import (
 	t "rudolphmax/vbbmon/internal/display/theme"
 )
 
+// ErrorBox is a component that displays an error message.
 type ErrorBox struct {
   Error string
 }

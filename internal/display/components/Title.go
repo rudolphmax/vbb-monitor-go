@@ -11,6 +11,7 @@ import (
 	"gioui.org/widget/material"
 )
 
+// Title is a component that displays a title with customizable color, text size, weight and alignment.
 type Title struct {
   Color *color.NRGBA
   TextSize unit.Sp

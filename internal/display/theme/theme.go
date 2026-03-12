@@ -26,6 +26,9 @@ var FontSmall unit.Sp
 var ForegroundColor color.NRGBA;
 var BackgroundColor color.NRGBA;
 
+// Init initializes the theme with the given configuration.
+// Theme aspects (like font sizes and colors) are then available as global variables.
+// Colors are converted from hex strings (as in the config) to `color.NRGBA` values for direct use with Gioui.
 func Init(config ThemeConfig) {
   FontLarge = unit.Sp(config.Font.SizeLarge)
   FontBase = unit.Sp(config.Font.SizeBase)
